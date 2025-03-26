@@ -28,13 +28,7 @@ function TextTranslator({ isOpened }: TextTranslator) {
 
   const { t } = useLingui();
 
-  const {
-    translateLanguage,
-    input,
-    setInput,
-    toggleTranslateLanguage,
-    translate,
-  } = useTranslate();
+  const { input, setInput, translate } = useTranslate();
 
   const handleClear = () => {
     setInput('');
@@ -47,19 +41,6 @@ function TextTranslator({ isOpened }: TextTranslator) {
   return (
     <section
       className={`text-translator${isOpened ? ' text-translator_open' : ''}`}>
-      {'en-ru' === translateLanguage ? (
-        <DecorativeTextAndIconButton
-          text={t`english`}
-          style={{ margin: '1rem auto 0' }}>
-          <GlobeIcon />
-        </DecorativeTextAndIconButton>
-      ) : (
-        <DecorativeTextAndIconButton
-          text={t`russian`}
-          style={{ margin: '1rem auto 0' }}>
-          <GlobeUkIcon />
-        </DecorativeTextAndIconButton>
-      )}
       <div className='text-translator__textarea-wrapper'>
         <textarea
           className='text-translator__textarea'
@@ -78,34 +59,6 @@ function TextTranslator({ isOpened }: TextTranslator) {
           <BackspaceIcon />
         </IconButton>
       </div>
-      <IconButton onClick={toggleTranslateLanguage}>
-        {hasSizeS ? (
-          <SyncIcon
-            style={{ transform: 'rotate(0.25turn)' }}
-            color='var(--main)'
-          />
-        ) : (
-          <SyncIcon
-            width={48}
-            height={48}
-            style={{ transform: 'rotate(0.25turn)' }}
-            color='var(--main)'
-          />
-        )}
-      </IconButton>
-      {'ru-en' === translateLanguage ? (
-        <DecorativeTextAndIconButton
-          text={t`english`}
-          style={{ margin: '1rem auto 0' }}>
-          <GlobeIcon />
-        </DecorativeTextAndIconButton>
-      ) : (
-        <DecorativeTextAndIconButton
-          text={t`russian`}
-          style={{ margin: '1rem auto 0' }}>
-          <GlobeUkIcon />
-        </DecorativeTextAndIconButton>
-      )}
       <div className='text-translator__textarea-wrapper'>
         <textarea
           className='text-translator__textarea'

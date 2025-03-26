@@ -13,8 +13,7 @@ let worker = null;
 let mainWindow = null;
 let isHandlerRegistered = false;
 
-let translations = {
-};
+let translations = {};
 
 ipcMain.on('update-translations', (_, newTranslations) => {
   translations = newTranslations;
@@ -87,7 +86,7 @@ const createWindow = () => {
 
   // Add a handler for the `transformers:run` event.
   if (!isHandlerRegistered) {
-    ipcMain.handle('transformers:run', (event, args) => {
+    ipcMain.handle('transformers:run', (_, args) => {
       return new Promise((resolve, reject) => {
         if (isWorkerBusy) {
           reject(new Error('Worker is busy'));
@@ -111,11 +110,7 @@ const createWindow = () => {
           }
         });
 
-        worker.on('error', (error) => {
-          reject(error);
-          isWorkerBusy = false;
-        });
-
+        worker.on('error', reject);
         worker.postMessage(args);
       });
     });

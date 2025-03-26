@@ -1,31 +1,33 @@
 const path = require('path');
 
 class TranslationPipeline {
-  // NOTE: Replace this with your own task and model.
-  static task = 'translation';
-  static model = 'opus-mt-en-ru';
+  static task = 'text-generation';
+  static model = 'gemma-3-1b-it-ONNX';
   static instance = null;
 
-  static async getInstance(
-    translateLanguage = 'en-ru',
-    progress_callback = null
-  ) {
-    if (
-      this.instance === null ||
-      this.model !== `opus-mt-${translateLanguage}`
-    ) {
-      // Dynamically import the Transformers.js library.
-      let { pipeline, env } = await import('@huggingface/transformers');
+  static async getInstance(progress_callback = null) {
+    if (!this.instance) {
+      const { pipeline, env } = await import('@huggingface/transformers');
 
-      // Search model locally.
       env.cacheDir = path.join(__dirname, 'models');
       env.allowRemoteModels = false;
 
-      this.model = `opus-mt-${translateLanguage}`;
-      this.instance = pipeline(this.task, this.model, { progress_callback });
+      this.instance = await pipeline(this.task, this.model, {
+        dtype: 'q4',
+        progress_callback,
+      });
     }
-
     return this.instance;
+  }
+
+  static async generate(messages, options = {}) {
+    const generator = await this.getInstance();
+    const result = await generator(messages, {
+      max_new_tokens: 512,
+      do_sample: false,
+      ...options,
+    });
+    return result;
   }
 }
 

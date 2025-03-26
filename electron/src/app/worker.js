@@ -1,36 +1,39 @@
-// This file (worker.js) contains all the logic for loading the model and running predictions.
 const { parentPort } = require('worker_threads');
 const TranslationPipeline = require('./model');
 
-// Message handler for workflow.
 parentPort.on('message', async (event) => {
   try {
-    let translator = await TranslationPipeline.getInstance(
-      event.translate,
-      (x) => {
-        parentPort.postMessage({ status: 'progress', data: x });
-      }
-    );
+    const { messages, options } = event;
 
-    // We perform translation.
-    let output = await translator(event.text, {
-      callback_function: (x) => {
+    parentPort.postMessage({
+      status: 'progress',
+      data: 'Initializing model...',
+    });
+
+    const generator = await TranslationPipeline.getInstance((progress) => {
+      parentPort.postMessage({ status: 'progress', data: progress });
+    });
+
+    parentPort.postMessage({
+      status: 'progress',
+      data: 'Generating response...',
+    });
+
+    const output = await TranslationPipeline.generate(messages, {
+      ...options,
+      callback_function: (beam) => {
         parentPort.postMessage({
           status: 'update',
-          output: translator.tokenizer.decode(x[0].output_token_ids, {
-            skip_special_tokens: true,
-          }),
+          output: beam[0].generated_text,
         });
       },
     });
 
-    // We send result
     parentPort.postMessage({
       status: 'complete',
-      output: output,
+      output: output[0].generated_text,
     });
   } catch (error) {
-    // We send an error if something goes wrong.
     parentPort.postMessage({
       status: 'error',
       error: error.message,
