@@ -1,6 +1,6 @@
 const path = require('path');
 
-class TranslationPipeline {
+class Pipeline {
   static task = 'text-generation';
   static model = 'gemma-3-1b-it-ONNX';
   static instance = null;
@@ -14,21 +14,11 @@ class TranslationPipeline {
 
       this.instance = await pipeline(this.task, this.model, {
         dtype: 'q4',
-        progress_callback,
+        progress_callback
       });
     }
     return this.instance;
   }
-
-  static async generate(messages, options = {}) {
-    const generator = await this.getInstance();
-    const result = await generator(messages, {
-      max_new_tokens: 512,
-      do_sample: false,
-      ...options,
-    });
-    return result;
-  }
 }
 
-module.exports = TranslationPipeline;
+module.exports = Pipeline;

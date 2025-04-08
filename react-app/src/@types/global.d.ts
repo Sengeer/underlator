@@ -1,3 +1,7 @@
+interface Status {
+  status: string;
+}
+
 interface Icon {
   width?: number;
   height?: number;
@@ -8,14 +12,14 @@ interface Icon {
 interface Message {
   status: string;
   data?: Progress;
-  output?: string | any[];
+  output?: string;
   error?: unknown;
 }
 
 interface Window {
   electron: {
     onStatus: (callback: (message: Message) => void) => void;
-    run: (message: any) => void;
+    run: (message: any, status: Status) => void;
     updateTranslations: (message: any) => void;
   };
 }

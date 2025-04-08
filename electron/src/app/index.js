@@ -23,7 +23,7 @@ ipcMain.on('update-translations', (_, newTranslations) => {
 function buildMenu() {
   const template = [
     {
-      label: '',
+      label: 'Underlator',
       submenu: [
         {
           role: 'about',
@@ -70,7 +70,7 @@ const createWindow = () => {
 
   // Explicitly remove the handler on the closed event.
   mainWindow.on('closed', () => {
-    ipcMain.removeHandler('transformers:run');
+    ipcMain.removeHandler('run');
     isHandlerRegistered = false;
 
     if (worker) {
@@ -82,41 +82,45 @@ const createWindow = () => {
   });
 
   // Checking for a repeated call of a worker.
-  let isWorkerBusy = false;
+  let currentWorker = null;
 
-  // Add a handler for the `transformers:run` event.
-  if (!isHandlerRegistered) {
-    ipcMain.handle('transformers:run', (_, args) => {
-      return new Promise((resolve, reject) => {
-        if (isWorkerBusy) {
-          reject(new Error('Worker is busy'));
-          return;
+  // Add a handler for the `run` event.
+  ipcMain.handle('run', (_, args) => {
+    return new Promise((resolve, reject) => {
+      if (currentWorker) {
+        currentWorker.terminate();
+        currentWorker = null;
+      }
+
+      const worker = new Worker(path.join(__dirname, 'worker.js'));
+      currentWorker = worker;
+
+      worker.on('message', (message) => {
+        mainWindow.webContents.send('status', message);
+
+        if (message.status === 'complete') {
+          resolve(message.output);
+          worker.terminate();
+          currentWorker = null;
         }
 
-        if (!worker) {
-          worker = new Worker(path.join(__dirname, 'worker.js'));
+        if (message.status === 'error') {
+          reject(new Error(message.error));
+          worker.terminate();
+          currentWorker = null;
         }
-
-        isWorkerBusy = true;
-
-        worker.on('message', (message) => {
-          mainWindow.webContents.send('transformers:status', message);
-          if (message.status === 'complete') {
-            resolve(message.output);
-            isWorkerBusy = false;
-          } else if (message.status === 'error') {
-            reject(new Error(message.error));
-            isWorkerBusy = false;
-          }
-        });
-
-        worker.on('error', reject);
-        worker.postMessage(args);
       });
-    });
 
-    isHandlerRegistered = true;
-  }
+      worker.on('error', (error) => {
+        clearTimeout(timeout);
+        reject(error);
+        worker.terminate();
+        currentWorker = null;
+      });
+
+      worker.postMessage(args);
+    });
+  });
 };
 
 // This method will be called when Electron has finished
